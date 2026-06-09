@@ -44,7 +44,7 @@ export default function AuthPage() {
         setMessage(error.message)
       } else {
         setIsError(false)
-        setMessage('Account created! Check your email to confirm, then login.')
+        window.location.href = '/onboarding'
       }
     }
     setLoading(false)

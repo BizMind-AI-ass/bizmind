@@ -14,7 +14,7 @@ export default function Home() {
             <a href="#howitworks" className="text-gray-400 hover:text-white text-sm transition-colors">How it works</a>
             <a href="#pricing" className="text-gray-400 hover:text-white text-sm transition-colors">Pricing</a>
           </div>
-          <a href="https://tally.so/r/vGzxJd" target="_blank" rel="noopener noreferrer"
+          <a href="/auth" target="_blank" rel="noopener noreferrer"
             className="bg-purple-600 hover:bg-purple-500 text-white px-5 py-2 rounded-full text-sm font-medium transition-colors">
             Get Started Free
           </a>
@@ -36,7 +36,7 @@ export default function Home() {
             No complicated software. No accountant needed. Just results.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="https://tally.so/r/vGzxJd" target="_blank" rel="noopener noreferrer"
+            <a href="/auth" target="_blank" rel="noopener noreferrer"
               className="bg-purple-600 hover:bg-purple-500 text-white px-8 py-4 rounded-full text-lg font-semibold transition-all hover:scale-105">
               Start Free — No Credit Card
             </a>
@@ -138,7 +138,7 @@ export default function Home() {
                     </li>
                   ))}
                 </ul>
-                <a href="https://tally.so/r/vGzxJd" target="_blank" rel="noopener noreferrer"
+                <a href="/auth" target="_blank" rel="noopener noreferrer"
                   className={`block text-center py-3 rounded-full font-medium transition-colors ${plan.popular ? "bg-purple-500 hover:bg-purple-400 text-white" : "border border-gray-700 hover:border-purple-600 text-gray-300"}`}>
                   Get Started Free
                 </a>
@@ -155,7 +155,7 @@ export default function Home() {
           <div className="bg-gradient-to-br from-purple-950 to-gray-900 border border-purple-800 rounded-3xl p-12">
             <h2 className="text-4xl font-bold text-white mb-4">Ready to grow your business?</h2>
             <p className="text-gray-400 text-lg mb-8">Join business owners worldwide using BizMind to track, manage, and grow — effortlessly.</p>
-            <a href="https://tally.so/r/vGzxJd" target="_blank" rel="noopener noreferrer"
+            <a href="/auth" target="_blank" rel="noopener noreferrer"
               className="inline-block bg-purple-600 hover:bg-purple-500 text-white px-10 py-4 rounded-full text-lg font-semibold transition-all hover:scale-105">
               Start Free Today
             </a>
@@ -174,7 +174,7 @@ export default function Home() {
           <div className="flex gap-6 text-sm text-gray-500">
             <a href="#features" className="hover:text-gray-300 transition-colors">Features</a>
             <a href="#pricing" className="hover:text-gray-300 transition-colors">Pricing</a>
-            <a href="https://tally.so/r/vGzxJd" target="_blank" rel="noopener noreferrer" className="hover:text-gray-300 transition-colors">Get Early Access</a>
+            <a href="" target="_blank" rel="noopener noreferrer" className="hover:text-gray-300 transition-colors">Get Early Access</a>
           </div>
           <p className="text-gray-600 text-sm">© 2026 BizMind. All rights reserved.</p>
         </div>
