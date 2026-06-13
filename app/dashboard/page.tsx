@@ -6,7 +6,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('overview')
   const [chatMessage, setChatMessage] = useState('')
   const [chatHistory, setChatHistory] = useState([
-    { role: 'ai', text: 'Hello! I am your BizMind AI. Tell me about today\'s sales, expenses, or ask me anything about your business!' }
+    { role: 'ai', text: 'Hello! I am your BizMind AI. Tell me about your sales, expenses, or ask anything about your business!' }
   ])
   const [transactions, setTransactions] = useState([
     { type: 'sale', description: 'Sample sale', amount: 1500, date: 'Today' },
@@ -25,36 +25,51 @@ export default function Dashboard() {
     setChatHistory(prev => [...prev, { role: 'user', text: userMsg }])
     setLoading(true)
 
-    // Simple AI response logic (we connect real Claude API next)
-    setTimeout(() => {
-      let response = ''
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMsg,
+          businessProfile: {
+            business_name: 'My Business',
+            business_type: 'retail',
+            language: 'English',
+            daily_revenue_estimate: 500,
+            billing_method: 'manual'
+          }
+        }),
+      })
+
+      const data = await response.json()
+
       const msg = userMsg.toLowerCase()
-      if (msg.includes('sale') || msg.includes('sold')) {
-        const amount = msg.match(/\d+/)
-        if (amount) {
-          setTransactions(prev => [...prev, { type: 'sale', description: userMsg, amount: parseInt(amount[0]), date: 'Today' }])
-          response = `Got it! I recorded a sale of $${amount[0]}. Your total sales today are now $${totalSales + parseInt(amount[0])}. Keep it up!`
-        } else {
-          response = 'Tell me the amount too! For example: "Sold items worth $500 today"'
-        }
-      } else if (msg.includes('expense') || msg.includes('spent') || msg.includes('paid')) {
-        const amount = msg.match(/\d+/)
-        if (amount) {
-          setTransactions(prev => [...prev, { type: 'expense', description: userMsg, amount: parseInt(amount[0]), date: 'Today' }])
-          response = `Recorded expense of $${amount[0]}. I am tracking it for your monthly report.`
-        } else {
-          response = 'Tell me the amount! For example: "Spent $200 on stock today"'
-        }
-      } else if (msg.includes('profit') || msg.includes('earning')) {
-        response = `Today so far — Sales: $${totalSales} | Expenses: $${totalExpenses} | Net Profit: $${netProfit}. ${netProfit > 0 ? 'You are in profit today!' : 'Expenses are high today. Watch your spending.'}`
-      } else if (msg.includes('hello') || msg.includes('hi')) {
-        response = 'Hello! Ready to track your business today. Tell me your sales, expenses, or ask about your profits!'
-      } else {
-        response = 'I understand! Keep telling me your daily sales and expenses and I will build your complete business report automatically.'
+      const amount = userMsg.match(/\d+(\.\d+)?/)
+      if (amount && (msg.includes('sold') || msg.includes('sale'))) {
+        setTransactions(prev => [...prev, {
+          type: 'sale',
+          description: userMsg,
+          amount: parseFloat(amount[0]),
+          date: 'Today'
+        }])
+      } else if (amount && (msg.includes('spent') || msg.includes('expense') || msg.includes('paid'))) {
+        setTransactions(prev => [...prev, {
+          type: 'expense',
+          description: userMsg,
+          amount: parseFloat(amount[0]),
+          date: 'Today'
+        }])
       }
-      setChatHistory(prev => [...prev, { role: 'ai', text: response }])
-      setLoading(false)
-    }, 1000)
+
+      setChatHistory(prev => [...prev, { role: 'ai', text: data.response }])
+    } catch (error) {
+      setChatHistory(prev => [...prev, {
+        role: 'ai',
+        text: 'Sorry, something went wrong. Please try again!'
+      }])
+    }
+
+    setLoading(false)
   }
 
   return (
@@ -95,7 +110,6 @@ export default function Dashboard() {
         {/* OVERVIEW TAB */}
         {activeTab === 'overview' && (
           <div>
-            {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
                 <div className="text-gray-400 text-sm mb-2">Total Sales Today</div>
@@ -114,7 +128,6 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Quick Actions */}
             <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-6">
               <h3 className="text-white font-semibold mb-4">Quick Actions</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -136,7 +149,6 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Recent Activity */}
             <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
               <h3 className="text-white font-semibold mb-4">Recent Activity</h3>
               <div className="space-y-3">
@@ -168,11 +180,10 @@ export default function Dashboard() {
               <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-sm">🤖</div>
               <div>
                 <div className="text-white font-medium">BizMind AI</div>
-                <div className="text-green-400 text-xs">● Online — Ready to help</div>
+                <div className="text-green-400 text-xs">● Online — Powered by Claude AI</div>
               </div>
             </div>
 
-            {/* Chat Messages */}
             <div className="h-96 overflow-y-auto p-4 space-y-4">
               {chatHistory.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -194,7 +205,6 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* Input */}
             <div className="p-4 border-t border-gray-800 flex gap-3">
               <input
                 type="text"
@@ -206,7 +216,8 @@ export default function Dashboard() {
               />
               <button
                 onClick={sendMessage}
-                className="bg-purple-600 hover:bg-purple-500 text-white px-5 py-3 rounded-xl font-medium transition-colors"
+                disabled={loading}
+                className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white px-5 py-3 rounded-xl font-medium transition-colors"
               >
                 Send
               </button>
@@ -229,7 +240,7 @@ export default function Dashboard() {
               {transactions.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">No transactions yet. Use AI Chat to add your sales and expenses!</div>
               ) : (
-                transactions.reverse().map((t, i) => (
+                [...transactions].reverse().map((t, i) => (
                   <div key={i} className="flex items-center justify-between px-6 py-4">
                     <div className="flex items-center gap-4">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${t.type === 'sale' ? 'bg-green-950 text-green-400' : 'bg-red-950 text-red-400'}`}>
