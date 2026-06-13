@@ -134,7 +134,7 @@ export default function Dashboard() {
                 {[
                   { icon: '💰', label: 'Add Sale', action: () => setActiveTab('ai chat') },
                   { icon: '📦', label: 'Add Expense', action: () => setActiveTab('ai chat') },
-                  { icon: '👥', label: 'Customers', action: () => {} },
+                  { icon: '👥', label: 'Customers', action: () => window.location.href = '/customers' },
                   { icon: '📊', label: 'Reports', action: () => setActiveTab('transactions') },
                 ].map((item, i) => (
                   <button
