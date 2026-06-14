@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('overview')
@@ -8,11 +9,34 @@ export default function Dashboard() {
   const [chatHistory, setChatHistory] = useState([
     { role: 'ai', text: 'Hello! I am your BizMind AI. Tell me about your sales, expenses, or ask anything about your business!' }
   ])
-  const [transactions, setTransactions] = useState([
+  const [transactions, setTransactions] = useState<any[]>([
     { type: 'sale', description: 'Sample sale', amount: 1500, date: 'Today' },
     { type: 'expense', description: 'Sample expense', amount: 300, date: 'Today' },
   ])
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    fetchTransactions()
+  }, [])
+
+  const fetchTransactions = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(50)
+    if (data && data.length > 0) {
+      setTransactions(data.map(t => ({
+        type: t.type,
+        description: t.description,
+        amount: Number(t.amount),
+        date: t.date
+      })).reverse())
+    }
+  }
 
   const totalSales = transactions.filter(t => t.type === 'sale').reduce((a, t) => a + t.amount, 0)
   const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((a, t) => a + t.amount, 0)
@@ -45,20 +69,31 @@ export default function Dashboard() {
 
       const msg = userMsg.toLowerCase()
       const amount = userMsg.match(/\d+(\.\d+)?/)
-      if (amount && (msg.includes('sold') || msg.includes('sale'))) {
-        setTransactions(prev => [...prev, {
-          type: 'sale',
-          description: userMsg,
-          amount: parseFloat(amount[0]),
-          date: 'Today'
-        }])
-      } else if (amount && (msg.includes('spent') || msg.includes('expense') || msg.includes('paid'))) {
-        setTransactions(prev => [...prev, {
-          type: 'expense',
-          description: userMsg,
-          amount: parseFloat(amount[0]),
-          date: 'Today'
-        }])
+      if (amount) {
+        let txType = ''
+        if (msg.includes('sold') || msg.includes('sale')) txType = 'sale'
+        else if (msg.includes('spent') || msg.includes('expense') || msg.includes('paid')) txType = 'expense'
+
+        if (txType) {
+          const newTx = {
+            type: txType,
+            description: userMsg,
+            amount: parseFloat(amount[0]),
+            date: new Date().toISOString().split('T')[0]
+          }
+          setTransactions(prev => [...prev, newTx])
+
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user) {
+            await supabase.from('transactions').insert({
+              user_id: user.id,
+              type: txType,
+              amount: parseFloat(amount[0]),
+              description: userMsg,
+              date: new Date().toISOString().split('T')[0]
+            })
+          }
+        }
       }
 
       setChatHistory(prev => [...prev, { role: 'ai', text: data.response }])
@@ -74,8 +109,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-950">
-
-      {/* Top Navbar */}
       <nav className="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center font-bold text-white text-sm">B</div>
@@ -93,8 +126,6 @@ export default function Dashboard() {
       </nav>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-
-        {/* Tab Navigation */}
         <div className="flex gap-2 mb-8">
           {['overview', 'ai chat', 'transactions'].map(tab => (
             <button
@@ -107,7 +138,6 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* OVERVIEW TAB */}
         {activeTab === 'overview' && (
           <div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -135,7 +165,7 @@ export default function Dashboard() {
                   { icon: '💰', label: 'Add Sale', action: () => setActiveTab('ai chat') },
                   { icon: '📦', label: 'Add Expense', action: () => setActiveTab('ai chat') },
                   { icon: '👥', label: 'Customers', action: () => window.location.href = '/customers' },
-                  { icon: '📊', label: 'Reports', action: () => setActiveTab('transactions') },
+                  { icon: '📊', label: 'Reports', action: () => window.location.href = '/reports' },
                 ].map((item, i) => (
                   <button
                     key={i}
@@ -152,7 +182,7 @@ export default function Dashboard() {
             <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
               <h3 className="text-white font-semibold mb-4">Recent Activity</h3>
               <div className="space-y-3">
-                {transactions.slice(-3).reverse().map((t, i) => (
+                {transactions.slice(-5).reverse().map((t, i) => (
                   <div key={i} className="flex items-center justify-between py-2 border-b border-gray-800">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${t.type === 'sale' ? 'bg-green-950 text-green-400' : 'bg-red-950 text-red-400'}`}>
@@ -173,17 +203,15 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* AI CHAT TAB */}
         {activeTab === 'ai chat' && (
           <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
             <div className="p-4 border-b border-gray-800 flex items-center gap-3">
               <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-sm">🤖</div>
               <div>
                 <div className="text-white font-medium">BizMind AI</div>
-                <div className="text-green-400 text-xs">● Online — Powered by Claude AI</div>
+                <div className="text-green-400 text-xs">● Online — Powered by Gemini AI</div>
               </div>
             </div>
-
             <div className="h-96 overflow-y-auto p-4 space-y-4">
               {chatHistory.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -204,7 +232,6 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-
             <div className="p-4 border-t border-gray-800 flex gap-3">
               <input
                 type="text"
@@ -225,7 +252,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* TRANSACTIONS TAB */}
         {activeTab === 'transactions' && (
           <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
             <div className="p-6 border-b border-gray-800 flex justify-between items-center">
@@ -260,7 +286,6 @@ export default function Dashboard() {
             </div>
           </div>
         )}
-
       </div>
     </div>
   )
